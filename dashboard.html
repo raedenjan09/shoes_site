@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" crossorigin="anonymous" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.16.1/sweetalert2.css" crossorigin="anonymous" />
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+      body {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: row;
+        background: #f8f9fa;
+      }
+      .admin-sidebar {
+        width: 240px;
+        min-height: 100vh;
+        background: #343a40;
+        color: #fff;
+        position: fixed;
+        left: 0;
+        top: 0;
+        display: flex;
+        flex-direction: column;
+        z-index: 1000;
+      }
+      .admin-sidebar .sidebar-header {
+        padding: 2rem 1rem 1rem 1.5rem;
+        font-size: 1.5rem;
+        font-weight: bold;
+        letter-spacing: 1px;
+        border-bottom: 1px solid #495057;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+      }
+      .admin-sidebar .sidebar-header i {
+        margin-right: 0.5rem;
+      }
+      .admin-sidebar .nav-link {
+        color: #fff;
+        font-size: 1.1rem;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0 20px 20px 0;
+        margin-bottom: 0.25rem;
+        transition: background 0.2s;
+      }
+      .admin-sidebar .nav-link.active, .admin-sidebar .nav-link:hover {
+        background: #007bff;
+        color: #fff;
+      }
+      .admin-main {
+        margin-left: 240px;
+        padding: 2rem 2rem 0 2rem;
+        width: 100%;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+      .admin-footer {
+        background: #343a40;
+        color: #fff;
+        text-align: center;
+        padding: 1rem 0;
+        margin-top: auto;
+        width: 100%;
+      }
+      @media (max-width: 768px) {
+        .admin-sidebar {
+          width: 100px;
+        }
+        .admin-main {
+          margin-left: 100px;
+          padding: 1rem 0.5rem 0 0.5rem;
+        }
+        .admin-sidebar .sidebar-header {
+          font-size: 1rem;
+          padding: 1rem 0.5rem 0.5rem 0.5rem;
+        }
+        .admin-sidebar .nav-link {
+          font-size: 0.9rem;
+          padding: 0.5rem 0.5rem;
+        }
+      }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.16.1/sweetalert2.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script type="text/javascript" src="js/dashboard.js"></script>
+  </head>
+  <body>
+    <nav class="admin-sidebar d-flex flex-column">
+      <div class="sidebar-header">
+        <i class="fas fa-shoe-prints"></i> Admin Panel
+      </div>
+      <a href="dashboard.html" class="nav-link active"><i class="fas fa-tachometer-alt mr-2"></i>Dashboard</a>
+      <a href="#" class="nav-link"><i class="fas fa-boxes mr-2"></i>Manage Products</a>
+      <a href="#" class="nav-link"><i class="fas fa-users mr-2"></i>Manage Users</a>
+      <a href="#" class="nav-link"><i class="fas fa-shopping-cart mr-2"></i>Orders</a>
+      <a href="#" class="nav-link" id="adminLogout"><i class="fas fa-sign-out-alt mr-2"></i>Logout</a>
+    </nav>
+    <main class="admin-main">
+      <h2 class="mb-4">Dashboard Analytics</h2>
+      <div class="row">
+        <div class="col-lg-6 mb-4">
+          <div class="card shadow-sm">
+            <div class="card-body">
+              <h5 class="card-title">Customers by Address</h5>
+              <canvas id="addressChart"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6 mb-4">
+          <div class="card shadow-sm">
+            <div class="card-body">
+              <h5 class="card-title">Monthly Sales</h5>
+              <canvas id="salesChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-8 mx-auto mb-4">
+          <div class="card shadow-sm">
+            <div class="card-body">
+              <h5 class="card-title">Items Sold</h5>
+              <canvas id="itemsChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+      <footer class="admin-footer mt-5">
+        <div>Admin Dashboard &copy; 2024 Shoes Site. All rights reserved.</div>
+      </footer>
+    </main>
+    <script>
+      $(document).on('click', '#adminLogout', function(e) {
+        e.preventDefault();
+        sessionStorage.clear();
+        window.location.href = 'login.html';
+      });
+    </script>
+  </body>
+</html>
