@@ -1,0 +1,23 @@
+<nav class="admin-sidebar d-flex flex-column">
+  <div class="sidebar-header">
+    <i class="fas fa-shoe-prints"></i> Admin Panel
+  </div>
+  <a href="dashboard.html" class="nav-link"><i class="fas fa-tachometer-alt mr-2"></i>Dashboard</a>
+  <a href="admin-products.html" class="nav-link"><i class="fas fa-boxes mr-2"></i>Manage Products</a>
+  <a href="admin-users.html" class="nav-link"><i class="fas fa-users mr-2"></i>Manage Users</a>
+  <a href="admin-orders.html" class="nav-link"><i class="fas fa-shopping-cart mr-2"></i>Orders</a>
+  <a href="#" class="nav-link" id="adminLogout"><i class="fas fa-sign-out-alt mr-2"></i>Logout</a>
+</nav>
+<script>
+  $(function() {
+    var path = window.location.pathname.split('/').pop();
+    $(".admin-sidebar .nav-link").each(function() {
+      var href = $(this).attr('href');
+      if (href && href !== '#' && path === href) {
+        $(this).addClass('active');
+      } else {
+        $(this).removeClass('active');
+      }
+    });
+  });
+</script> 
