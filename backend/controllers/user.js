@@ -68,12 +68,43 @@ const loginUser = async (req, res) => {
 
         // Include role in JWT
         const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET);
+        const createdAt = new Date();
+        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 1 day expiry
+        // Save token to user_tokens table
+        connection.execute(
+          'INSERT INTO user_tokens (user_id, token, created_at, expires_at) VALUES (?, ?, ?, ?)',
+          [user.id, token, createdAt, expiresAt],
+          (err2) => {
+            if (err2) {
+              console.log('Error saving token:', err2);
+            }
+            // Also save token in users table (current_token column)
+            connection.execute(
+              'UPDATE users SET current_token = ? WHERE id = ?',
+              [token, user.id],
+              (err3) => {
+                if (err3) {
+                  console.log('Error updating current_token:', err3);
+                }
+                return res.status(200).json({
+                    success: "welcome back",
+                    user: user,
+                    token
+                });
+              }
+            );
+          }
+        );
+    });
+};
 
-        return res.status(200).json({
-            success: "welcome back",
-            user: user,
-            token
-        });
+// Token revocation for logout (example function)
+const logoutUser = (req, res) => {
+    const token = req.header('Authorization')?.split(' ')[1];
+    if (!token) return res.status(400).json({ error: 'No token provided' });
+    connection.execute('DELETE FROM user_tokens WHERE token = ?', [token], (err) => {
+        if (err) return res.status(500).json({ error: 'Error logging out', details: err });
+        res.json({ success: true, message: 'Logged out' });
     });
 };
 
@@ -122,6 +153,7 @@ const updateUser = (req, res) => {
     });
 };
 
+// Update deactivateUser to revoke all tokens for the user
 const deactivateUser = (req, res) => {
     const { email } = req.body;
     if (!email) {
@@ -139,11 +171,18 @@ const deactivateUser = (req, res) => {
         if (result.affectedRows === 0) {
             return res.status(404).json({ error: 'User not found' });
         }
-        return res.status(200).json({
-            success: true,
-            message: 'User deactivated successfully',
-            email,
-            deleted_at: timestamp
+        // Revoke all tokens for this user
+        connection.execute('SELECT id FROM users WHERE email = ?', [email], (err2, userRows) => {
+            if (!err2 && userRows.length > 0) {
+                const userId = userRows[0].id;
+                connection.execute('DELETE FROM user_tokens WHERE user_id = ?', [userId], () => {});
+            }
+            return res.status(200).json({
+                success: true,
+                message: 'User deactivated successfully',
+                email,
+                deleted_at: timestamp
+            });
         });
     });
 };
@@ -228,4 +267,32 @@ const reactivateUserById = (req, res) => {
     });
 };
 
-module.exports = { registerUser, loginUser, updateUser, deactivateUser, getUserProfile, getAllUsers, changeUserRole, deactivateUserById, reactivateUserById };
+// Delete a specific token (manual token revocation)
+const deleteToken = (req, res) => {
+    const { token } = req.body;
+    if (!token) {
+        return res.status(400).json({ error: 'Token is required' });
+    }
+    connection.execute('DELETE FROM user_tokens WHERE token = ?', [token], (err, result) => {
+        if (err) {
+            return res.status(500).json({ error: 'Error deleting token', details: err });
+        }
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Token not found' });
+        }
+        res.json({ success: true, message: 'Token deleted' });
+    });
+};
+
+module.exports = {
+    registerUser,
+    loginUser,
+    updateUser,
+    deactivateUser,
+    getUserProfile,
+    getAllUsers,
+    changeUserRole,
+    deactivateUserById,
+    reactivateUserById,
+    deleteToken,
+};
