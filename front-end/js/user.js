@@ -1,6 +1,8 @@
 $(document).ready(function () {
     const url = window.location.origin + '/'
 
+    let currentOrderForModal = null;
+
     $("#registerForm").on('submit', function (e) {
         e.preventDefault();
         var form = $('#registerForm')[0];
@@ -344,24 +346,63 @@ $(document).ready(function () {
             });
         });
 
-        // Show order details in a Bootstrap modal
+        // Store the current order globally when showing order details
+        // let currentOrderForModal = null; // This line is removed as it's now declared at the top
         function showOrderDetails(order) {
+            currentOrderForModal = order;
             let html = `<h5>Order #${order.orderinfo_id}</h5>
                         <p>Status: <span class="badge badge-${getStatusBadge(order.status)}">${order.status}</span></p>
                         <p>Placed: ${new Date(order.date_placed).toLocaleString()}</p>
                         <ul class="list-group mb-2">`;
-            order.items.forEach(item => {
-                html += `<li class="list-group-item d-flex align-items-center">
-                    <img src="${item.image}" alt="${item.name}" style="width:40px;height:40px;object-fit:cover;vertical-align:middle;margin-right:10px;">
-                    <span class="flex-grow-1">${item.name} - Qty: ${item.quantity} Total: $${Number(item.sell_price * item.quantity).toFixed(2)}</span>
-                </li>`;
-                if (order.status === 'delivered') {
-                    html += `<button class="btn btn-sm btn-success add-review-btn" data-item-id="${item.item_id}">Add Review</button>`;
-                }
+            const token = sessionStorage.getItem('token') ? JSON.parse(sessionStorage.getItem('token')) : null;
+            let itemPromises = order.items.map(item => {
+                return new Promise(resolve => {
+                    // Fetch user's review for this item in this order
+                    $.ajax({
+                        method: 'GET',
+                        url:   `/api/v1/reviews/user/${item.item_id}?orderinfo_id=${order.orderinfo_id}`,
+                        headers: { 'Authorization': 'Bearer ' + token },
+                        success: function(data) {
+                            let itemHtml = `<li class="list-group-item d-flex align-items-center">
+                                <img src="${item.image}" alt="${item.name}" style="width:40px;height:40px;object-fit:cover;vertical-align:middle;margin-right:10px;">
+                                <span class="flex-grow-1">${item.name} - Qty: ${item.quantity} Total: $${Number(item.sell_price * item.quantity).toFixed(2)}</span>`;
+                            if (order.status === 'delivered') {
+                                if (data.review) {
+                                    // Show review and Update Review button
+                                    itemHtml += `<div class="ml-auto text-right">
+                                        <div><strong>Your Review:</strong></div>
+                                        <div>Rating: ${data.review.rating}</div>
+                                        <div>Comment: ${data.review.comment}</div>
+                                        <button class="btn btn-sm btn-primary update-review-btn mt-2" data-item-id="${item.item_id}" data-orderinfo-id="${order.orderinfo_id}">Update</button>
+                                    </div>`;
+                                } else {
+                                    // Show Add Review button
+                                    itemHtml += `<button class="btn btn-sm btn-success add-review-btn ml-auto" data-item-id="${item.item_id}" data-orderinfo-id="${order.orderinfo_id}">Add Review</button>`;
+                                }
+                            }
+                            itemHtml += `</li>`;
+                            resolve(itemHtml);
+                        },
+                        error: function() {
+                            // Fallback: just show Add Review button if error
+                            let itemHtml = `<li class="list-group-item d-flex align-items-center">
+                                <img src="${item.image}" alt="${item.name}" style="width:40px;height:40px;object-fit:cover;vertical-align:middle;margin-right:10px;">
+                                <span class="flex-grow-1">${item.name} - Qty: ${item.quantity} Total: $${Number(item.sell_price * item.quantity).toFixed(2)}</span>`;
+                            if (order.status === 'delivered') {
+                                itemHtml += `<button class="btn btn-sm btn-success add-review-btn ml-auto" data-item-id="${item.item_id}" data-orderinfo-id="${order.orderinfo_id}">Add Review</button>`;
+                            }
+                            itemHtml += `</li>`;
+                            resolve(itemHtml);
+                        }
+                    });
+                });
             });
-            html += '</ul>';
-            $('#orderDetailsModalBody').html(html);
-            $('#orderDetailsModal').modal('show');
+            Promise.all(itemPromises).then(itemHtmlArr => {
+                html += itemHtmlArr.join('');
+                html += '</ul>';
+                $('#orderDetailsModalBody').html(html);
+                $('#orderDetailsModal').modal('show');
+            });
         }
         // --- End User Order Management Section ---
     }
@@ -399,36 +440,160 @@ $(document).ready(function () {
         });
     }
 
-    // Open review modal
-    $(document).on('click', '.add-review-btn', function() {
+    // Show order details in a Bootstrap modal
+    // function showOrderDetails(order) {
+    //     let html = `<h5>Order #${order.orderinfo_id}</h5>
+    //                 <p>Status: <span class="badge badge-${getStatusBadge(order.status)}">${order.status}</span></p>
+    //                 <p>Placed: ${new Date(order.date_placed).toLocaleString()}</p>
+    //                 <ul class="list-group mb-2">`;
+    //     const token = sessionStorage.getItem('token') ? JSON.parse(sessionStorage.getItem('token')) : null;
+    //     let itemPromises = order.items.map(item => {
+    //         return new Promise(resolve => {
+    //             // Fetch user's review for this item in this order
+    //             $.ajax({
+    //                 method: 'GET',
+    //                 url: `/api/v1/reviews/user/${item.item_id}?orderinfo_id=${order.orderinfo_id}`,
+    //                 headers: { 'Authorization': 'Bearer ' + token },
+    //                 success: function(data) {
+    //                     let itemHtml = `<li class="list-group-item d-flex align-items-center">
+    //                         <img src="${item.image}" alt="${item.name}" style="width:40px;height:40px;object-fit:cover;vertical-align:middle;margin-right:10px;">
+    //                         <span class="flex-grow-1">${item.name} - Qty: ${item.quantity} Total: $${Number(item.sell_price * item.quantity).toFixed(2)}</span>`;
+    //                     if (order.status === 'delivered') {
+    //                         if (data.review) {
+    //                             // Show review and Update Review button
+    //                             itemHtml += `<div class="ml-auto text-right">
+    //                                 <div><strong>Your Review:</strong></div>
+    //                                 <div>Rating: ${data.review.rating}</div>
+    //                                 <div>Comment: ${data.review.comment}</div>
+    //                                 <button class="btn btn-sm btn-primary update-review-btn mt-2" data-item-id="${item.item_id}" data-orderinfo-id="${order.orderinfo_id}">Update Review</button>
+    //                             </div>`;
+    //                         } else {
+    //                             // Show Add Review button
+    //                             itemHtml += `<button class="btn btn-sm btn-success add-review-btn ml-auto" data-item-id="${item.item_id}" data-orderinfo-id="${order.orderinfo_id}">Add Review</button>`;
+    //                         }
+    //                     }
+    //                     itemHtml += `</li>`;
+    //                     resolve(itemHtml);
+    //                 },
+    //                 error: function() {
+    //                     // Fallback: just show Add Review button if error
+    //                     let itemHtml = `<li class="list-group-item d-flex align-items-center">
+    //                         <img src="${item.image}" alt="${item.name}" style="width:40px;height:40px;object-fit:cover;vertical-align:middle;margin-right:10px;">
+    //                         <span class="flex-grow-1">${item.name} - Qty: ${item.quantity} Total: $${Number(item.sell_price * item.quantity).toFixed(2)}</span>`;
+    //                     if (order.status === 'delivered') {
+    //                         itemHtml += `<button class="btn btn-sm btn-success add-review-btn ml-auto" data-item-id="${item.item_id}" data-orderinfo-id="${order.orderinfo_id}">Add Review</button>`;
+    //                     }
+    //                     itemHtml += `</li>`;
+    //                     resolve(itemHtml);
+    //                 }
+    //             });
+    //         });
+    //     });
+    //     Promise.all(itemPromises).then(itemHtmlArr => {
+    //         html += itemHtmlArr.join('');
+    //         html += '</ul>';
+    //         $('#orderDetailsModalBody').html(html);
+    //         $('#orderDetailsModal').modal('show');
+    //     });
+    // }
+
+    // Open review modal for add or update
+    $(document).on('click', '.add-review-btn, .update-review-btn', function() {
       const itemId = $(this).data('item-id');
+      const orderinfoId = $(this).data('orderinfo-id');
+      const token = sessionStorage.getItem('token') ? JSON.parse(sessionStorage.getItem('token')) : null;
       $('#reviewItemId').val(itemId);
-      $('#reviewRating').val('');
-      $('#reviewComment').val('');
-      $('#reviewModal').modal('show');
+      console.log('Setting reviewOrderinfoId:', orderinfoId);
+      $('#reviewOrderinfoId').val(orderinfoId);
+      // Fetch user's review for this item in this order
+      $.ajax({
+        method: 'GET',
+        url: `/api/v1/reviews/user/${itemId}?orderinfo_id=${orderinfoId}`,
+        headers: { 'Authorization': 'Bearer ' + token },
+        success: function(data) {
+          if (data.review) {
+            // Review exists: show review, hide Add, show Update
+            $('#reviewRating').val(data.review.rating).prop('disabled', false); // ENABLED
+            $('#reviewComment').val(data.review.comment).prop('disabled', false); // ENABLED
+            $('#addReviewBtn').hide();
+            $('#updateReviewBtn').show().text('Save Update');
+            $('#reviewModalLabel').text('Update Your Review');
+          } else {
+            // No review: show Add, hide Update
+            $('#reviewRating').val('').prop('disabled', false);
+            $('#reviewComment').val('').prop('disabled', false);
+            $('#addReviewBtn').show();
+            $('#updateReviewBtn').hide();
+            $('#saveUpdateBtn').hide();
+            $('#reviewModalLabel').text('Add Review');
+          }
+          $('#reviewModal').modal('show');
+        }
+      });
     });
 
-    // Submit review
-    $('#reviewForm').on('submit', function(e) {
+    // Submit review (add)
+    $('#reviewForm').off('submit').on('submit', function(e) {
       e.preventDefault();
+      $('#addReviewBtn').prop('disabled', true); // Disable to prevent double submit
       const item_id = $('#reviewItemId').val();
+      const orderinfo_id = $('#reviewOrderinfoId').val();
       const rating = $('#reviewRating').val();
       const comment = $('#reviewComment').val();
       const token = sessionStorage.getItem('token') ? JSON.parse(sessionStorage.getItem('token')) : null;
+      console.log('Review form submitted!');
       $.ajax({
         method: 'POST',
         url: '/api/v1/reviews',
         headers: { 'Authorization': 'Bearer ' + token },
-        data: JSON.stringify({ item_id, rating, comment }),
+        data: JSON.stringify({ item_id, orderinfo_id, rating, comment }),
         contentType: 'application/json',
         success: function() {
+          $('#addReviewBtn').prop('disabled', false);
           $('#reviewModal').modal('hide');
           Swal.fire('Thank you!', 'Your review has been submitted.', 'success');
           // Optionally refresh the order list or UI
         },
         error: function(xhr) {
+          $('#addReviewBtn').prop('disabled', false);
           Swal.fire('Error', xhr.responseJSON?.error || 'Could not submit review.', 'error');
         }
       });
     });
+
+    // Handle Update Review button click
+    // In the modal logic, show only one button for update/save:
+    // When a review exists, show 'Update Review' (as a button with id 'updateReviewBtn').
+    // When clicked, make fields editable and change the button text to 'Save Update'.
+    // On click again, save the update.
+
+    // Update Review / Save Update button logic
+    $('#updateReviewBtn').off('click').on('click', function() {
+      // Always treat as save update
+      const item_id = $('#reviewItemId').val();
+      const orderinfo_id = $('#reviewOrderinfoId').val();
+      const rating = $('#reviewRating').val();
+      const comment = $('#reviewComment').val();
+      const token = sessionStorage.getItem('token') ? JSON.parse(sessionStorage.getItem('token')) : null;
+      $.ajax({
+        method: 'PUT',
+        url: '/api/v1/reviews',
+        headers: { 'Authorization': 'Bearer ' + token },
+        data: JSON.stringify({ item_id, orderinfo_id, rating, comment }),
+        contentType: 'application/json',
+        success: function() {
+          $('#reviewModal').modal('hide');
+          Swal.fire('Updated!', 'Your review has been updated.', 'success');
+          if (currentOrderForModal) {
+            showOrderDetails(currentOrderForModal);
+          }
+        },
+        error: function(xhr) {
+          Swal.fire('Error', xhr.responseJSON?.error || 'Could not update review.', 'error');
+        }
+      });
+    });
+
+    // In the modal show logic, only show #updateReviewBtn (hide #saveUpdateBtn)
+    // ... existing code ...
 });

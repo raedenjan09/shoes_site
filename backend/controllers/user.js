@@ -11,7 +11,15 @@ const registerUser = async (req, res) => {
     const userSql = 'INSERT INTO users (name, password, email, role) VALUES (?, ?, ?, ?)';
     let imagePath = null;
     if (req.file) {
-        imagePath = req.file.path.replace(/\\/g, "/");
+        // Extract relative path from full path
+        const fullPath = req.file.path.replace(/\\/g, "/");
+        const baseDir = "backend/images/";
+        const index = fullPath.indexOf(baseDir);
+        if (index !== -1) {
+            imagePath = "/images/" + fullPath.substring(index + baseDir.length);
+        } else {
+            imagePath = fullPath; // fallback to full path if baseDir not found
+        }
     }
     try {
         connection.execute(userSql, [name, hashedPassword, email, 'user'], (err, result) => {
@@ -112,7 +120,15 @@ const updateUser = (req, res) => {
     const { title, fname, lname, addressline, town, zipcode, phone, userId } = req.body;
     let image = null;
     if (req.file) {
-        image = req.file.path.replace(/\\/g, "/");
+        // Extract relative path from full path
+        const fullPath = req.file.path.replace(/\\/g, "/");
+        const baseDir = "backend/images/";
+        const index = fullPath.indexOf(baseDir);
+        if (index !== -1) {
+            image = "/images/" + fullPath.substring(index + baseDir.length);
+        } else {
+            image = fullPath; // fallback to full path if baseDir not found
+        }
     }
 
     // 1. Check if user exists in users table

@@ -143,5 +143,45 @@
         $("#footer").load("footer.html");
       });
     </script>
+    <!-- Review Modal -->
+    <div class="modal fade" id="reviewModal" tabindex="-1" role="dialog" aria-labelledby="reviewModalLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <form id="reviewForm">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="reviewModalLabel">Add Review</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+              <input type="hidden" id="reviewItemId" name="item_id">
+              <input type="hidden" id="reviewOrderinfoId" name="orderinfo_id">
+              <div class="form-group">
+                <label for="reviewRating">Rating</label>
+                <select class="form-control" id="reviewRating" name="rating" required>
+                  <option value="">Select rating</option>
+                  <option value="5">5 - Excellent</option>
+                  <option value="4">4 - Good</option>
+                  <option value="3">3 - Average</option>
+                  <option value="2">2 - Poor</option>
+                  <option value="1">1 - Terrible</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="reviewComment">Comment</label>
+                <textarea class="form-control" id="reviewComment" name="comment" rows="3" required></textarea>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button id="addReviewBtn" type="submit" class="btn btn-success">Add Review</button>
+              <button id="updateReviewBtn" type="button" class="btn btn-primary" style="display:none;">Update Review</button>
+              <button id="saveUpdateBtn" type="button" class="btn btn-primary" style="display:none;">Save Update</button>
+              <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
   </body>
 </html>
