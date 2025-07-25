@@ -1,4 +1,4 @@
- $(document).ready(function () {
+$(document).ready(function () {
     const url = window.location.origin + '/'
     var itemCount = 0;
     var priceTotal = 0;
@@ -408,32 +408,6 @@
         });
     }
 
-    // Search functionality
-    $("#searchBtn").on('click', function() {
-        performSearch();
-    });
-
-    $("#searchInput").on('keypress', function(e) {
-        if (e.which === 13) { // Enter key
-            performSearch();
-        }
-    });
-
-    function performSearch() {
-        const searchTerm = $("#searchInput").val().toLowerCase();
-        
-        if (searchTerm === '') {
-            displayAllProducts(allProducts);
-            return;
-        }
-
-        const filteredProducts = allProducts.filter(product => 
-            product.description.toLowerCase().includes(searchTerm)
-        );
-        
-        displayAllProducts(filteredProducts);
-    }
-
     // Filter functionality
     $(".filter-btn").on('click', function() {
         $(".filter-btn").removeClass('active');
@@ -669,6 +643,105 @@
     // In document ready, setup the checkout modal
     setupCheckoutModal();
     updateCartCount();
+
+    // --- API-based autocomplete for search bar ---
+    let searchTimeout;
+
+    $("#searchInput").on("input", function() {
+        const searchTerm = $(this).val().trim();
+        $("#autocomplete-list").empty();
+        
+        // Clear existing timeout
+        clearTimeout(searchTimeout);
+        
+        if (!searchTerm) {
+            $("#autocomplete-list").hide();
+            return;
+        }
+
+        // Add debounce to prevent too many requests
+        searchTimeout = setTimeout(() => {
+            $.ajax({
+                url: `${url}api/v1/items/search`,
+                method: "GET",
+                data: { q: searchTerm },
+                success: function(response) {
+                    $("#autocomplete-list").empty();
+                    
+                    if (!response.success || !response.items || response.items.length === 0) {
+                        $("#autocomplete-list").html(`
+                            <div class="p-2 text-muted">No results found</div>
+                        `).show();
+                        return;
+                    }
+
+                    response.items.forEach(item => {
+                        $("#autocomplete-list").append(`
+                            <div class="autocomplete-item p-2" data-id="${item.item_id}">
+                                ${item.description}
+                            </div>
+                        `);
+                    });
+                    
+                    $("#autocomplete-list").show();
+                },
+                error: function(xhr) {
+                    console.error("Search error:", xhr);
+                    $("#autocomplete-list").html(`
+                        <div class="p-2 text-danger">Error occurred while searching</div>
+                    `).show();
+                }
+            });
+        }, 300); // 300ms delay
+    });
+
+    // Handle autocomplete item click
+    $(document).on("click", ".autocomplete-item", function() {
+        const selectedText = $(this).text();
+        $("#searchInput").val(selectedText);
+        $("#autocomplete-list").empty().hide();
+        performSearch();
+    });
+
+    // Hide autocomplete list when clicking outside
+    $(document).on("click", function(e) {
+        if (!$(e.target).closest("#searchInput, #autocomplete-list").length) {
+            $("#autocomplete-list").empty().hide();
+        }
+    });
+
+    function performSearch() {
+        const searchTerm = $("#searchInput").val();
+        $("#autocomplete-list").empty();
+        if (!searchTerm) {
+            // Optionally reload all products or show a message
+            return;
+        }
+        $.ajax({
+            url: "/api/v1/items/filter",
+            method: "GET",
+            data: { q: searchTerm },
+            dataType: "json",
+            success: function(response) {
+                if (!response.success || !Array.isArray(response.items) || response.items.length === 0) {
+                    $("#items").html('<div class="col-12 text-center"><p>No products found.</p></div>');
+                    return;
+                }
+                displayAllProducts(response.items);
+            }
+        });
+    }
+
+    // Trigger search on Enter key
+    $("#searchInput").on("keypress", function(e) {
+        if (e.which === 13) { // Enter key
+            performSearch();
+        }
+    });
+    // Trigger search on search button click
+    $("#searchBtn").on("click", function() {
+        performSearch();
+    });
 });
 
 // Add fade-in animation CSS

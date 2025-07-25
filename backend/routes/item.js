@@ -7,12 +7,16 @@ const { getAllItems,
     getSingleItem,
     createItem,
     updateItem,
-    deleteItem
+    deleteItem,
+    searchItems,
+    fullSearchItems
 } = require('../controllers/item')
 
 const {isAuthenticatedUser} = require('../middlewares/auth')
 
 router.get('/items', getAllItems)
+router.get('/items/search', searchItems);
+router.get('/items/filter', fullSearchItems);
 router.get('/items/:id', getSingleItem)
 router.post('/items', isAuthenticatedUser, upload.fields([
   { name: 'image', maxCount: 1 },

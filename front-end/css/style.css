@@ -60,17 +60,48 @@ body {
 
 /* Search Section */
 .search-section {
-    border-bottom: 1px solid #e9ecef;
+    position: relative;
 }
 
 #searchInput {
     border-radius: 25px 0 0 25px;
     border: 2px solid #007bff;
+    position: relative;
+    z-index: 2; /* Make sure input is above the dropdown */
 }
 
 #searchBtn {
     border-radius: 0 25px 25px 0;
     border: 2px solid #007bff;
+}
+
+.autocomplete-items {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    display: none;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.autocomplete-item {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.autocomplete-item:hover {
+    background-color: #f8f9fa;
+}
+
+.autocomplete-item img {
+    border-radius: 4px;
 }
 
 /* Product Cards */

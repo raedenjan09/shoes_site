@@ -184,3 +184,64 @@ exports.deleteItem = (req, res) => {
     });
 };
 
+exports.searchItems = async (req, res) => {
+    try {
+        const searchTerm = req.query.q?.trim() || '';
+        
+        if (!searchTerm) {
+            return res.json({ 
+                success: true, 
+                items: [] 
+            });
+        }
+
+        const sql = `
+            SELECT item_id, description, sell_price, image 
+            FROM item 
+            WHERE LOWER(description) LIKE ? 
+            LIMIT 10
+        `;
+
+        const [results] = await connection.promise().execute(
+            sql, 
+            [`%${searchTerm.toLowerCase()}%`]
+        );
+
+        res.json({
+            success: true,
+            items: results
+        });
+
+    } catch (error) {
+        console.error('Search error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Search failed'
+        });
+    }
+};
+
+exports.fullSearchItems = async (req, res) => {
+    try {
+        const searchTerm = req.query.q?.trim() || '';
+        if (!searchTerm) {
+            return res.json({ success: true, items: [] });
+        }
+        const sql = `
+            SELECT i.*, s.quantity
+            FROM item i
+            LEFT JOIN stock s ON i.item_id = s.item_id
+            WHERE LOWER(i.description) LIKE ?
+            LIMIT 20
+        `;
+        const [results] = await connection.promise().execute(
+            sql,
+            [`%${searchTerm.toLowerCase()}%`]
+        );
+        res.json({ success: true, items: results });
+    } catch (error) {
+        console.error('Full search error:', error);
+        res.status(500).json({ success: false, message: 'Search failed' });
+    }
+};
+

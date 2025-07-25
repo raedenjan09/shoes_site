@@ -87,13 +87,18 @@
         <div class="row justify-content-center">
           <div class="col-md-8">
             <div class="input-group">
-              <input type="text" class="form-control form-control-lg" id="searchInput" placeholder="Search for shoes...">
+              <input type="text" 
+                     class="form-control form-control-lg" 
+                     id="searchInput" 
+                     placeholder="Search for shoes..."
+                     autocomplete="off">
               <div class="input-group-append">
                 <button class="btn btn-primary btn-lg" type="button" id="searchBtn">
                   <i class="fas fa-search"></i>
                 </button>
               </div>
             </div>
+            <div id="autocomplete-list" class="autocomplete-items"></div>
           </div>
         </div>
       </div>
