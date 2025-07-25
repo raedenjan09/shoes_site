@@ -1,4 +1,4 @@
-$(document).ready(function () {
+ $(document).ready(function () {
     const url = window.location.origin + '/'
     var itemCount = 0;
     var priceTotal = 0;
@@ -96,27 +96,74 @@ $(document).ready(function () {
                 $("#featuredProducts").append(row);
                 row = $('<div class="row"></div>');
             }
-            
-            var item = `<div class="col-md-6 mb-4">
-                <div class="card h-100 featured-product">
-                    <div class="featured-badge">Featured</div>
-                    <img src="/images/${value.image.replace(/^.*[\\\/]/, '')}" class="card-img-top" alt="${value.description}">
-                    <div class="card-body">
-                        <h5 class="card-title">${value.description}</h5>
-                        <p class="card-text price">₱ ${value.sell_price}</p>
-                        <p class="card-text stock-info"><i class="fas fa-box mr-1"></i>Stock: ${value.quantity ?? 0}</p>
-                        <a href="#!" class="btn btn-primary show-details" role="button" 
-                           data-id="${value.item_id}"
-                           data-description="${value.description}"
-                           data-price="${value.sell_price}"
-                           data-image="${value.image}"
-                           data-stock="${value.quantity ?? 0}">
-                           <i class="fas fa-eye mr-2"></i>View Details
-                        </a>
-                    </div>
-                </div>
-            </div>`;
-            row.append(item);
+
+            // Fetch reviews for product to calculate average rating and count
+            $.ajax({
+                method: 'GET',
+                url: `${url}api/v1/reviews/${value.item_id}`,
+                dataType: 'json',
+                async: false, // To ensure reviews are fetched before rendering card
+                success: function (res) {
+                    const reviews = res.reviews || [];
+                    let avgRating = 0;
+                    if (reviews.length > 0) {
+                        const totalRating = reviews.reduce((sum, r) => sum + r.rating, 0);
+                        avgRating = totalRating / reviews.length;
+                    }
+                    // Generate star rating HTML
+                    let starsHtml = '';
+                    for (let i = 1; i <= 5; i++) {
+                        starsHtml += i <= Math.round(avgRating) ? '<i class="fas fa-star"></i>' : '<i class="far fa-star"></i>';
+                    }
+                    // Review count text
+                    const reviewCountText = reviews.length === 1 ? '1 review' : `${reviews.length} reviews`;
+
+                    var item = `<div class="col-md-6 mb-4">
+                        <div class="card h-100 featured-product">
+                            <div class="featured-badge">Featured</div>
+                            <img src="/images/${value.image.replace(/^.*[\\\/]/, '')}" class="card-img-top" alt="${value.description}">
+                            <div class="card-body">
+                                <h5 class="card-title">${value.description}</h5>
+                                <p class="card-text price">₱ ${value.sell_price}</p>
+                                <p class="card-text stock-info"><i class="fas fa-box mr-1"></i>Stock: ${value.quantity ?? 0}</p>
+                                <div class="review-summary">${starsHtml}<span class="review-count">${reviewCountText}</span></div>
+                                <a href="#!" class="btn btn-primary show-details" role="button" 
+                                   data-id="${value.item_id}"
+                                   data-description="${value.description}"
+                                   data-price="${value.sell_price}"
+                                   data-image="${value.image}"
+                                   data-stock="${value.quantity ?? 0}">
+                                   <i class="fas fa-eye mr-2"></i>View Details
+                                </a>
+                            </div>
+                        </div>
+                    </div>`;
+                    row.append(item);
+                },
+                error: function () {
+                    // If error fetching reviews, render without reviews
+                    var item = `<div class="col-md-6 mb-4">
+                        <div class="card h-100 featured-product">
+                            <div class="featured-badge">Featured</div>
+                            <img src="/images/${value.image.replace(/^.*[\\\/]/, '')}" class="card-img-top" alt="${value.description}">
+                            <div class="card-body">
+                                <h5 class="card-title">${value.description}</h5>
+                                <p class="card-text price">₱ ${value.sell_price}</p>
+                                <p class="card-text stock-info"><i class="fas fa-box mr-1"></i>Stock: ${value.quantity ?? 0}</p>
+                                <a href="#!" class="btn btn-primary show-details" role="button" 
+                                   data-id="${value.item_id}"
+                                   data-description="${value.description}"
+                                   data-price="${value.sell_price}"
+                                   data-image="${value.image}"
+                                   data-stock="${value.quantity ?? 0}">
+                                   <i class="fas fa-eye mr-2"></i>View Details
+                                </a>
+                            </div>
+                        </div>
+                    </div>`;
+                    row.append(item);
+                }
+            });
         });
         $("#featuredProducts").append(row);
     }
@@ -136,26 +183,72 @@ $(document).ready(function () {
                 row = $('<div class="row"></div>');
                 $("#items").append(row);
             }
-            
-            var item = `<div class="col-md-3 mb-4 product-item" data-name="${value.description.toLowerCase()}" data-brand="${getBrandFromName(value.description)}">
-                <div class="card h-100">
-                    <img src="/images/${value.image.replace(/^.*[\\\/]/, '')}" class="card-img-top" alt="${value.description}">
-                    <div class="card-body">
-                        <h5 class="card-title">${value.description}</h5>
-                        <p class="card-text price">₱ ${value.sell_price}</p>
-                        <p class="card-text stock-info"><i class="fas fa-box mr-1"></i>Stock: ${value.quantity ?? 0}</p>
-                        <a href="#!" class="btn btn-primary show-details" role="button" 
-                           data-id="${value.item_id}"
-                           data-description="${value.description}"
-                           data-price="${value.sell_price}"
-                           data-image="${value.image}"
-                           data-stock="${value.quantity ?? 0}">
-                           <i class="fas fa-eye mr-2"></i>View Details
-                        </a>
-                    </div>
-                </div>
-            </div>`;
-            row.append(item);
+
+            // Fetch reviews for product to calculate average rating and count
+            $.ajax({
+                method: 'GET',
+                url: `${url}api/v1/reviews/${value.item_id}`,
+                dataType: 'json',
+                async: false, // To ensure reviews are fetched before rendering card
+                success: function (res) {
+                    const reviews = res.reviews || [];
+                    let avgRating = 0;
+                    if (reviews.length > 0) {
+                        const totalRating = reviews.reduce((sum, r) => sum + r.rating, 0);
+                        avgRating = totalRating / reviews.length;
+                    }
+                    // Generate star rating HTML
+                    let starsHtml = '';
+                    for (let i = 1; i <= 5; i++) {
+                        starsHtml += i <= Math.round(avgRating) ? '<i class="fas fa-star"></i>' : '<i class="far fa-star"></i>';
+                    }
+                    // Review count text
+                    const reviewCountText = reviews.length === 1 ? '1 review' : `${reviews.length} reviews`;
+
+                    var item = `<div class="col-md-3 mb-4 product-item" data-name="${value.description.toLowerCase()}" data-brand="${getBrandFromName(value.description)}">
+                        <div class="card h-100">
+                            <img src="/images/${value.image.replace(/^.*[\\\/]/, '')}" class="card-img-top" alt="${value.description}">
+                            <div class="card-body">
+                                <h5 class="card-title">${value.description}</h5>
+                                <p class="card-text price">₱ ${value.sell_price}</p>
+                                <p class="card-text stock-info"><i class="fas fa-box mr-1"></i>Stock: ${value.quantity ?? 0}</p>
+                                <div class="review-summary">${starsHtml}<span class="review-count">${reviewCountText}</span></div>
+                                <a href="#!" class="btn btn-primary show-details" role="button" 
+                                   data-id="${value.item_id}"
+                                   data-description="${value.description}"
+                                   data-price="${value.sell_price}"
+                                   data-image="${value.image}"
+                                   data-stock="${value.quantity ?? 0}">
+                                   <i class="fas fa-eye mr-2"></i>View Details
+                                </a>
+                            </div>
+                        </div>
+                    </div>`;
+                    row.append(item);
+                },
+                error: function () {
+                    // If error fetching reviews, render without reviews
+                    var item = `<div class="col-md-3 mb-4 product-item" data-name="${value.description.toLowerCase()}" data-brand="${getBrandFromName(value.description)}">
+                        <div class="card h-100">
+                            <img src="/images/${value.image.replace(/^.*[\\\/]/, '')}" class="card-img-top" alt="${value.description}">
+                            <div class="card-body">
+                                <h5 class="card-title">${value.description}</h5>
+                                <p class="card-text price">₱ ${value.sell_price}</p>
+                                <p class="card-text stock-info"><i class="fas fa-box mr-1"></i>Stock: ${value.quantity ?? 0}</p>
+                                <a href="#!" class="btn btn-primary show-details" role="button" 
+                                   data-id="${value.item_id}"
+                                   data-description="${value.description}"
+                                   data-price="${value.sell_price}"
+                                   data-image="${value.image}"
+                                   data-stock="${value.quantity ?? 0}">
+                                   <i class="fas fa-eye mr-2"></i>View Details
+                                </a>
+                            </div>
+                        </div>
+                    </div>`;
+                    row.append(item);
+                }
+            });
         });
     }
 
@@ -176,17 +269,18 @@ $(document).ready(function () {
         if ($('#productDetailsModal').length === 0) {
             $('body').append(`
                 <div class="modal fade" id="productDetailsModal" tabindex="-1" role="dialog" aria-labelledby="productDetailsModalLabel" aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-centered" role="document">
-                        <div class="modal-content">
+                   <div class="modal-dialog modal-dialog-centered" role="document">
+                     <div class="modal-content">
                             <div class="modal-header">
                                 <h5 class="modal-title" id="productDetailsModalLabel"></h5>
-                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                    <span aria-hidden="true">&times;</span>
+                                <butto" id="productDetailsModalLabeln type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span a" aria-label="Closeria-hidden="true">&times;</span>
                                 </button>
                             </div>
-                            <div class="modal-body text-center" id="productDetailsModalBody">
-                                <!-- Product details will be injected here -->
-                            </div>
+            <div class="modal-body text-center" id="productDetailsModalBody">
+                <div id="galleryAndInfo"></div>
+                <!-- Product details will be injected here -->
+            </div>
                         </div>
                     </div>
                 </div>
@@ -226,7 +320,7 @@ $(document).ready(function () {
                                 <div style="font-size:0.9em;color:#888;">Image ${currentIndex+1} of ${images.length}</div>
                             `;
                         }
-                        $('#productDetailsModalBody').html(`
+                        $('#galleryAndInfo').html(`
                             ${galleryHtml}
                             <p id="price">Price: ₱<strong>${product.sell_price}</strong></p>
                             <p>Stock: ${product.quantity}</p>
@@ -239,6 +333,43 @@ $(document).ready(function () {
                     }
                     renderGallery();
                     $('#productDetailsModal').modal('show');
+
+                    // Fetch and display reviews for the product
+                    $.ajax({
+                        method: 'GET',
+                        url: `${url}api/v1/reviews/${product.item_id}`,
+                        dataType: 'json',
+                        success: function (res) {
+                            const reviews = res.reviews || [];
+                            let reviewsHtml = '';
+                            if (reviews.length === 0) {
+                                reviewsHtml = '<p>No reviews yet.</p>';
+                            } else {
+                                reviews.forEach(review => {
+                                    const date = new Date(review.created_at).toLocaleDateString();
+                                    reviewsHtml += `
+                                        <div class="review-item">
+                                            <div class="review-rating">${'&#9733;'.repeat(review.rating)}${'&#9734;'.repeat(5 - review.rating)}</div>
+                                            <div class="review-comment">${review.comment || ''}</div>
+                                            <div class="review-user">${review.name}</div>
+                                            <div class="review-date">${date}</div>
+                                        </div>
+                                    `;
+                                });
+                            }
+                            if ($('#reviewsContainer').length === 0) {
+                                $('#productDetailsModalBody').append('<div id="reviewsContainer" class="review-list"><h5>Customer Reviews</h5></div>');
+                            }
+                            $('#reviewsContainer').html(reviewsHtml);
+                        },
+                        error: function () {
+                            if ($('#reviewsContainer').length === 0) {
+                                $('#productDetailsModalBody').append('<div id="reviewsContainer" class="review-list"><h5>Customer Reviews</h5></div>');
+                            }
+                            $('#reviewsContainer').html('<p class="text-danger">Failed to load reviews.</p>');
+                        }
+                    });
+
                     // Carousel navigation
                     $('#productDetailsModalBody').off('click', '#prevImg').on('click', '#prevImg', function() {
                         currentIndex = (currentIndex - 1 + images.length) % images.length;

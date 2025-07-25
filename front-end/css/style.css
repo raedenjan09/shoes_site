@@ -573,6 +573,52 @@ input[type="submit"]:hover {
     padding: 0.5rem 0.5rem;
   }
 }
+
+.review-summary {
+  font-size: 0.9em;
+  color: #f39c12;
+  margin-top: 5px;
+}
+.review-summary .fa-star {
+  margin-right: 2px;
+}
+.review-summary .review-count {
+  color: #555;
+  font-size: 0.8em;
+  margin-left: 5px;
+}
+.review-list {
+  text-align: left;
+  max-height: 200px;
+  overflow-y: auto;
+  margin-top: 15px;
+  border-top: 1px solid #ddd;
+  padding-top: 10px;
+}
+.review-list .review-item {
+  margin-bottom: 10px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 5px;
+}
+.review-list .review-item:last-child {
+  border-bottom: none;
+}
+.review-list .review-rating {
+  color: #f39c12;
+}
+.review-list .review-comment {
+  margin: 5px 0;
+  font-style: italic;
+}
+.review-list .review-user {
+  font-weight: bold;
+  font-size: 0.85em;
+}
+.review-list .review-date {
+  font-size: 0.75em;
+  color: #999;
+}
+
 /* =====================
    End Admin Dashboard Styles
    ===================== */
