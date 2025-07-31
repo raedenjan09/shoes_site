@@ -1,4 +1,7 @@
 const connection = require('../config/database');
+const csv = require('csv-parser');
+const fs = require('fs');
+const path = require('path');
 
 exports.getAllItems = (req, res) => {
     const sql = 'SELECT * FROM item i INNER JOIN stock s ON i.item_id = s.item_id';
@@ -101,6 +104,70 @@ exports.createItem = (req, res) => {
             });
         });
     });
+}
+
+// New CSV upload handler
+exports.uploadCsv = (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ error: 'No CSV file uploaded' });
+    }
+
+    const results = [];
+    const filePath = req.file.path;
+
+    fs.createReadStream(filePath)
+        .pipe(csv())
+        .on('data', (data) => {
+            results.push(data);
+        })
+        .on('end', () => {
+            // Process CSV rows
+            const insertPromises = results.map(row => {
+                return new Promise((resolve, reject) => {
+                    const { description, cost_price, sell_price, quantity } = row;
+
+                    if (!description || !cost_price || !sell_price || !quantity) {
+                        return reject(new Error('Missing required fields in CSV'));
+                    }
+
+                    const sql = 'INSERT INTO item (description, cost_price, sell_price, image) VALUES (?, ?, ?, ?)';
+                    const values = [description, parseFloat(cost_price), parseFloat(sell_price), null];
+
+                    connection.execute(sql, values, (err, result) => {
+                        if (err) {
+                            return reject(err);
+                        }
+                        const itemId = result.insertId;
+                        const stockSql = 'INSERT INTO stock (item_id, quantity) VALUES (?, ?)';
+                        const stockValues = [itemId, parseInt(quantity)];
+
+                        connection.execute(stockSql, stockValues, (err) => {
+                            if (err) {
+                                return reject(err);
+                            }
+                            resolve();
+                        });
+                    });
+                });
+            });
+
+            Promise.all(insertPromises)
+                .then(() => {
+                    // Delete the uploaded CSV file after processing
+                    fs.unlink(filePath, (err) => {
+                        if (err) {
+                            console.error('Error deleting CSV file:', err);
+                        }
+                    });
+                    res.json({ message: 'CSV uploaded and products added successfully' });
+                })
+                .catch((error) => {
+                    res.status(500).json({ error: error.message || 'Error processing CSV' });
+                });
+        })
+        .on('error', (error) => {
+            res.status(500).json({ error: error.message || 'Error reading CSV file' });
+        });
 }
 
 exports.updateItem = (req, res) => {

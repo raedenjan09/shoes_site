@@ -9,7 +9,8 @@ const { getAllItems,
     updateItem,
     deleteItem,
     searchItems,
-    fullSearchItems
+    fullSearchItems,
+    uploadCsv // new import
 } = require('../controllers/item')
 
 const {isAuthenticatedUser} = require('../middlewares/auth')
@@ -27,4 +28,7 @@ router.put('/items/:id', isAuthenticatedUser, upload.fields([
   { name: 'images', maxCount: 10 }
 ]), updateItem)
 router.delete('/items/:id', isAuthenticatedUser, deleteItem)
+
+// New route for CSV upload
+router.post('/items/upload-csv', isAuthenticatedUser, upload.single('csvFile'), uploadCsv)
 module.exports = router;
