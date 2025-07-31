@@ -110,13 +110,70 @@ $(document).ready(function() {
     
     $('#logoutLink').on('click', function(e) {
         e.preventDefault();
+        
+        // Call backend logout API to invalidate token
+        const token = sessionStorage.getItem('token') ? JSON.parse(sessionStorage.getItem('token')) : null;
+        if (token) {
+            $.ajax({
+                method: 'POST',
+                url: window.location.origin + '/api/v1/logout',
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                },
+                success: function(data) {
+                    console.log('Logged out successfully');
+                },
+                error: function(xhr) {
+                    console.log('Logout error:', xhr);
+                },
+                complete: function() {
+                    // Always clear storage and redirect, even if API call fails
+                    sessionStorage.clear();
+                    window.location.href = 'login.html';
+                }
+            });
+        } else {
+            // If no token, just clear storage and redirect
         sessionStorage.clear();
         window.location.href = 'login.html';
+        }
     });
 
     $(window).on('storage', function(e) {
         if (e.originalEvent.key === 'cart') {
             updateCartCount();
+        }
+    });
+    
+    // Modal logout button
+    $('#modalLogoutBtn').on('click', function(e) {
+        e.preventDefault();
+        
+        // Call backend logout API to invalidate token
+        const token = sessionStorage.getItem('token') ? JSON.parse(sessionStorage.getItem('token')) : null;
+        if (token) {
+            $.ajax({
+                method: 'POST',
+                url: window.location.origin + '/api/v1/logout',
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                },
+                success: function(data) {
+                    console.log('Logged out successfully');
+                },
+                error: function(xhr) {
+                    console.log('Logout error:', xhr);
+                },
+                complete: function() {
+                    // Always clear storage and redirect, even if API call fails
+                    sessionStorage.clear();
+                    window.location.href = 'login.html';
+                }
+            });
+        } else {
+            // If no token, just clear storage and redirect
+            sessionStorage.clear();
+            window.location.href = 'login.html';
         }
     });
 });

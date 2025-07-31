@@ -99,6 +99,21 @@ exports.updateOrderStatus = (req, res) => {
             if (err2 || !results.length) {
                 return res.json({ success: true, warning: 'Order updated but email not sent (order not found)' });
             }
+
+            // Decrement stock only if status is 'processing'
+if (status === 'processing') {
+    for (const item of results) {
+        const updateStockSql = 'UPDATE stock SET quantity = quantity - ? WHERE item_id = ?';
+        connection.execute(updateStockSql, [item.quantity, item.item_id], (stockErr, stockResults) => {
+            if (stockErr) {
+                console.error(`Error updating stock for item ${item.item_id}:`, stockErr);
+            } else {
+                console.log(`Stock updated successfully for item ${item.item_id}, affectedRows: ${stockResults.affectedRows}`);
+            }
+        });
+    }
+}
+
             const { email, fname, lname, date_placed } = results[0];
             const itemsHtml = results.map(item => {
                 const subtotal = Number(item.sell_price) * item.quantity;
@@ -169,4 +184,4 @@ exports.updateOrderStatus = (req, res) => {
             res.json({ success: true });
         });
     });
-}; 
+};

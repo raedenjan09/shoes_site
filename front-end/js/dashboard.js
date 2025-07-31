@@ -328,7 +328,32 @@ $(document).ready(function () {
   // Admin sidebar logout button
   $(document).on('click', '#adminLogout', function(e) {
     e.preventDefault();
+    
+    // Call backend logout API to invalidate token
+    const token = sessionStorage.getItem('token') ? JSON.parse(sessionStorage.getItem('token')) : null;
+    if (token) {
+      $.ajax({
+        method: 'POST',
+        url: url + 'api/v1/logout',
+        headers: {
+          'Authorization': 'Bearer ' + token
+        },
+        success: function(data) {
+          console.log('Admin logged out successfully');
+        },
+        error: function(xhr) {
+          console.log('Admin logout error:', xhr);
+        },
+        complete: function() {
+          // Always clear session storage and redirect, even if API call fails
+          sessionStorage.clear();
+          window.location.href = 'login.html';
+        }
+      });
+    } else {
+      // If no token, just clear storage and redirect
     sessionStorage.clear();
     window.location.href = 'login.html';
+    }
   });
 });

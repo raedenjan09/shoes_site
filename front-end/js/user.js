@@ -3,8 +3,8 @@ $(document).ready(function () {
 
     let currentOrderForModal = null;
 
-    $("#registerForm").on('submit', function (e) {
-        e.preventDefault();
+    // Global function for registration submission (called by validation)
+    window.submitRegistration = function() {
         var form = $('#registerForm')[0];
         var formData = new FormData(form);
         $.ajax({
@@ -59,24 +59,10 @@ $(document).ready(function () {
                 }
             }
         });
-    });
+    };
 
-    $('#avatar').on('change', function () {
-        const file = this.files[0];
-        if (file && file.type.startsWith('image/')) {
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                $('#avatarPreview').attr('src', e.target.result).show();
-            };
-            reader.readAsDataURL(file);
-        } else {
-            $('#avatarPreview').hide();
-        }
-    });
-
-    $("#login").on('click', function (e) {
-        e.preventDefault();
-
+    // Global function for login submission (called by validation)
+    window.submitLogin = function() {
         let email = $("#email").val()
         let password = $("#password").val()
         let user = {
@@ -127,10 +113,10 @@ $(document).ready(function () {
                 }
             }
         });
-    });
+    };
 
-    $("#updateBtn").on('click', function (event) {
-        event.preventDefault();
+    // Global function for profile submission (called by validation)
+    window.submitProfile = function() {
         userId = sessionStorage.getItem('userId') ?? sessionStorage.getItem('userId')
        
         var data = $('#profileForm')[0];
@@ -165,6 +151,30 @@ $(document).ready(function () {
                 console.log(error);
             }
         });
+    };
+
+    // Legacy form handlers (kept for backward compatibility)
+    $("#registerForm").on('submit', function (e) {
+        e.preventDefault();
+        // Validation will handle this now
+    });
+
+    $("#login").on('click', function (e) {
+        e.preventDefault();
+        // Validation will handle this now
+    });
+
+    $('#avatar').on('change', function () {
+        const file = this.files[0];
+        if (file && file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                $('#avatarPreview').attr('src', e.target.result).show();
+            };
+            reader.readAsDataURL(file);
+        } else {
+            $('#avatarPreview').hide();
+        }
     });
 
     // Fetch and display user profile on profile.html
@@ -233,7 +243,7 @@ $(document).ready(function () {
         function renderOrders(orders, filterStatus = 'all') {
             allOrders = orders; // Save for filtering
             let html = '';
-            let filtered = (filterStatus === 'all') ? orders : orders.filter(order => order.status === filterStatus);
+let filtered = (filterStatus === 'all') ? orders : orders.filter(order => order.status.toLowerCase() === filterStatus.toLowerCase());
 
             if (filtered.length === 0) {
                 html = '<p>No orders found.</p>';
@@ -246,7 +256,7 @@ $(document).ready(function () {
                             <span class="badge badge-pill badge-${getStatusBadge(order.status)} float-right">${order.status}</span>
                             <br>
                             <button class="btn btn-sm btn-primary view-order-btn mt-2" data-id="${order.orderinfo_id}">View Details</button>
-                            ${order.status === 'pending' ? `<button class="btn btn-sm btn-danger cancel-order-btn mt-2" data-id="${order.orderinfo_id}">Cancel</button>` : ''}
+${order.status.toLowerCase() === 'pending' ? `<button class="btn btn-sm btn-danger cancel-order-btn mt-2" data-id="${order.orderinfo_id}">Cancel</button>` : ''}
                           </div>
                         </div>
                     `;

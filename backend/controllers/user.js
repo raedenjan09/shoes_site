@@ -1,6 +1,7 @@
 const connection = require('../config/database');
 const bcrypt = require('bcrypt')
 const jwt = require("jsonwebtoken")
+const { setCurrentToken, clearCurrentTokenByValue } = require('../utils/tokenUtils');
 
 const registerUser = async (req, res) => {
     // Collect all user details
@@ -74,30 +75,54 @@ const loginUser = async (req, res) => {
 
         delete user.password;
 
-        // Include role in JWT
-        const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET);
+        // Create JWT token with 24-hour expiry
+        const token = jwt.sign(
+            { id: user.id, role: user.role }, 
+            process.env.JWT_SECRET, 
+            { expiresIn: '24h' }
+        );
+        
         const createdAt = new Date();
-        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 1 day expiry
-        // Save token to user_tokens table
+        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours from now
+        
+        // First, invalidate any existing tokens for this user
+        connection.execute(
+            'DELETE FROM user_tokens WHERE user_id = ?',
+            [user.id],
+            (err1) => {
+                if (err1) {
+                    console.log('Error clearing existing tokens:', err1);
+                }
+                
+                // Save new token to user_tokens table
         connection.execute(
           'INSERT INTO user_tokens (user_id, token, created_at, expires_at) VALUES (?, ?, ?, ?)',
           [user.id, token, createdAt, expiresAt],
           (err2) => {
             if (err2) {
               console.log('Error saving token:', err2);
+                            return res.status(500).json({ error: 'Error creating session' });
             }
+                        
             // Also save token in users table (current_token column)
-            connection.execute(
-              'UPDATE users SET current_token = ? WHERE id = ?',
-              [token, user.id],
-              (err3) => {
-                if (err3) {
-                  console.log('Error updating current_token:', err3);
-                }
+                        setCurrentToken(user.id, token)
+                            .then(() => {
+                                return res.status(200).json({
+                                    success: "welcome back",
+                                    user: user,
+                                    token,
+                                    expiresAt: expiresAt.toISOString()
+                                });
+                            })
+                            .catch((err) => {
+                                console.log('Error setting current token:', err);
+                                // Still return success even if current_token update fails
                 return res.status(200).json({
                     success: "welcome back",
                     user: user,
-                    token
+                                    token,
+                                    expiresAt: expiresAt.toISOString()
+                                });
                 });
               }
             );
@@ -106,13 +131,30 @@ const loginUser = async (req, res) => {
     });
 };
 
-// Token revocation for logout (example function)
+// Token revocation for logout
 const logoutUser = (req, res) => {
     const token = req.header('Authorization')?.split(' ')[1];
-    if (!token) return res.status(400).json({ error: 'No token provided' });
+    if (!token) {
+        return res.status(400).json({ error: 'No token provided' });
+    }
+    
+    // Delete the specific token from user_tokens table
     connection.execute('DELETE FROM user_tokens WHERE token = ?', [token], (err) => {
-        if (err) return res.status(500).json({ error: 'Error logging out', details: err });
-        res.json({ success: true, message: 'Logged out' });
+        if (err) {
+            console.log('Error deleting token:', err);
+            return res.status(500).json({ error: 'Error logging out', details: err });
+        }
+        
+        // Also clear the current_token from users table
+        clearCurrentTokenByValue(token)
+            .then(() => {
+                res.json({ success: true, message: 'Logged out successfully' });
+            })
+            .catch((err) => {
+                console.log('Error clearing current token:', err);
+                // Still return success even if current_token clear fails
+                res.json({ success: true, message: 'Logged out successfully' });
+            });
     });
 };
 
@@ -303,6 +345,7 @@ const deleteToken = (req, res) => {
 module.exports = {
     registerUser,
     loginUser,
+    logoutUser,
     updateUser,
     deactivateUser,
     getUserProfile,

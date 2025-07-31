@@ -619,11 +619,35 @@ $(document).ready(function () {
             const $loginLink = $('a.nav-link[href="login.html"]');
             $loginLink.text('Logout').attr({ 'href': '#', 'id': 'logout-link' }).on('click', function (e) {
                 e.preventDefault();
-                // Remove user-specific cart on logout
+                
+                // Call backend logout API to invalidate token
+                const token = sessionStorage.getItem('token') ? JSON.parse(sessionStorage.getItem('token')) : null;
+                if (token) {
+                    $.ajax({
+                        method: 'POST',
+                        url: url + 'api/v1/logout',
+                        headers: {
+                            'Authorization': 'Bearer ' + token
+                        },
+                        success: function(data) {
+                            console.log('Logged out successfully');
+                        },
+                        error: function(xhr) {
+                            console.log('Logout error:', xhr);
+                        },
+                        complete: function() {
+                            // Always clear local storage and redirect, even if API call fails
+                            localStorage.removeItem(getCartKey());
+                            sessionStorage.clear();
+                            window.location.href = 'login.html';
+                        }
+                    });
+                } else {
+                    // If no token, just clear storage and redirect
                 localStorage.removeItem(getCartKey());
-                sessionStorage.removeItem('userId');
-                sessionStorage.removeItem('token');
+                    sessionStorage.clear();
                 window.location.href = 'login.html';
+                }
             });
         }
         

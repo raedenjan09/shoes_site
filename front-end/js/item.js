@@ -6,6 +6,30 @@ $(document).ready(function () {
         return;
     }
 
+    // Global function for product submission (called by validation)
+    window.submitProduct = function() {
+        const formData = new FormData($('#productForm')[0]);
+        const id = $('#productId').val();
+        const method = id ? 'PUT' : 'POST';
+        const endpoint = id ? `${url}api/v1/items/${id}` : `${url}api/v1/items`;
+        $.ajax({
+            method: method,
+            url: endpoint,
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: { 'Authorization': 'Bearer ' + token },
+            success: function () {
+                Swal.fire({ icon: 'success', text: id ? 'Product updated!' : 'Product added!' });
+                $('#productModal').modal('hide');
+                fetchProducts();
+            },
+            error: function (xhr) {
+                Swal.fire({ icon: 'error', text: xhr.responseJSON?.error || 'Failed to save product.' });
+            }
+        });
+    };
+
     // Fetch and render products
     function fetchProducts() {
         $.ajax({
@@ -63,29 +87,10 @@ $(document).ready(function () {
         }
     });
 
-    // Save (Add/Edit) Product
+    // Save (Add/Edit) Product - Legacy handler (validation will handle this now)
     $('#productForm').on('submit', function (e) {
         e.preventDefault();
-        const formData = new FormData(this);
-        const id = $('#productId').val();
-        const method = id ? 'PUT' : 'POST';
-        const endpoint = id ? `${url}api/v1/items/${id}` : `${url}api/v1/items`;
-        $.ajax({
-            method: method,
-            url: endpoint,
-            data: formData,
-            processData: false,
-            contentType: false,
-            headers: { 'Authorization': 'Bearer ' + token },
-            success: function () {
-                Swal.fire({ icon: 'success', text: id ? 'Product updated!' : 'Product added!' });
-                $('#productModal').modal('hide');
-                fetchProducts();
-            },
-            error: function (xhr) {
-                Swal.fire({ icon: 'error', text: xhr.responseJSON?.error || 'Failed to save product.' });
-            }
-        });
+        // Validation will handle this now
     });
 
     // Edit Product
@@ -175,8 +180,33 @@ $(document).ready(function () {
     // Admin sidebar logout button
     $(document).on('click', '#adminLogout', function(e) {
         e.preventDefault();
+        
+        // Call backend logout API to invalidate token
+        const token = sessionStorage.getItem('token') ? JSON.parse(sessionStorage.getItem('token')) : null;
+        if (token) {
+            $.ajax({
+                method: 'POST',
+                url: url + 'api/v1/logout',
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                },
+                success: function(data) {
+                    console.log('Admin logged out successfully');
+                },
+                error: function(xhr) {
+                    console.log('Admin logout error:', xhr);
+                },
+                complete: function() {
+                    // Always clear session storage and redirect, even if API call fails
+                    sessionStorage.clear();
+                    window.location.href = 'login.html';
+                }
+            });
+        } else {
+            // If no token, just clear storage and redirect
         sessionStorage.clear();
         window.location.href = 'login.html';
+        }
     });
 
     // Initial load

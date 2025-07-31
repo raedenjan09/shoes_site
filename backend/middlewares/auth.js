@@ -11,21 +11,36 @@ exports.isAuthenticatedUser = (req, res, next) => {
         return res.status(401).json({ message: 'Login first to access this resource' })
     }
 
+    // First verify the JWT token structure and expiry
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = { id: decoded.id, role: decoded.role };
+    } catch (jwtError) {
+        if (jwtError.name === 'TokenExpiredError') {
+            return res.status(401).json({ message: 'Token has expired. Please login again.' });
+        } else if (jwtError.name === 'JsonWebTokenError') {
+            return res.status(401).json({ message: 'Invalid token. Please login again.' });
+        } else {
+            return res.status(401).json({ message: 'Token verification failed' });
+        }
+    }
+
     // Check if token is in the database and not expired
     connection.execute(
         'SELECT * FROM user_tokens WHERE token = ? AND expires_at > NOW()',
         [token],
         (err, results) => {
-            if (err || results.length === 0) {
-                return res.status(401).json({ message: 'Token is invalid or expired' });
+            if (err) {
+                console.log('Database error checking token:', err);
+                return res.status(500).json({ message: 'Authentication error' });
             }
-            try {
-                const decoded = jwt.verify(token, process.env.JWT_SECRET)
-                req.user = { id: decoded.id, role: decoded.role } // include role if present
-                next()
-            } catch (err) {
-                return res.status(401).json({ message: 'Invalid token' })
+            
+            if (results.length === 0) {
+                return res.status(401).json({ message: 'Token is invalid or expired. Please login again.' });
             }
+            
+            // Token is valid, proceed
+            next();
         }
     );
 };

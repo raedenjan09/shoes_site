@@ -10,6 +10,7 @@ const dashboard = require('./routes/dashboard');
 const adminOrderRoutes = require('./routes/adminOrder');
 const reviewRoutes = require('./routes/review');
 const adminReviewRoutes = require('./routes/adminReview');
+const { scheduleTokenCleanup } = require('./utils/tokenUtils');
 
 app.use(cors())
 
@@ -29,6 +30,9 @@ app.use('/api/v1', dashboard);
 app.use('/api/v1', adminOrderRoutes);
 app.use('/api/v1', reviewRoutes);
 app.use('/api/v1', adminReviewRoutes);
+
+// Schedule token cleanup
+scheduleTokenCleanup();
 
 // Serve HTML pages
 app.get('/', (req, res) => {

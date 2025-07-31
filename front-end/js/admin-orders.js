@@ -108,16 +108,26 @@ $(document).ready(function () {
             cancelButtonColor: '#d33'
         }).then((result) => {
             if (result.isConfirmed) {
+                // Use Swal loading modal like in checkout
+                Swal.fire({
+                    title: 'Updating Order Status...',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
                 $.ajax({
                     method: 'PATCH',
                     url: url + 'api/v1/admin/orders/' + orderId + '/status',
                     headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
                     data: JSON.stringify({ status: newStatus }),
                     success: function () {
+                        Swal.close();
                         Swal.fire({ icon: 'success', title: 'Status updated!', timer: 1200, showConfirmButton: false });
                         fetchOrders();
                     },
                     error: function (xhr) {
+                        Swal.close();
                         Swal.fire({ icon: 'error', title: 'Error', text: xhr.responseJSON?.error || 'Failed to update status.' });
                         fetchOrders();
                     }
